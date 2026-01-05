@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mehmet Yaşar Kandemir İHO Kıl ve Kazan Namaz & Ezber Okul Sistemi</title>
+    <title>Mehmet Yaşar Kandemir İHO Namaz & Ezber Takip Sistemi</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@
         .reason-btn { width: 100%; padding: 15px; margin-bottom: 10px; border: 2px solid #eee; border-radius: 15px; background: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 15px; transition: 0.2s; text-align: left; }
         .reason-btn:hover { background: #f0fdf4; border-color: var(--primary); }
 
-        /* TEBRİK KARTI (CELEBRATION MODAL) STİLLERİ */
+        /* TEBRİK KARTI STİLLERİ */
         #celebration-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(59, 130, 246, 0.95));
@@ -61,9 +61,7 @@
 
         /* UI ELEMENTS */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 30px; overflow-y: auto; }
-        /* LOGO CONTAINER GÜNCELLENDİ */
         .logo-container { padding: 0; overflow: hidden; background: transparent; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 25px; width: 110px; height: 110px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        
         .login-box { background: white; width: 100%; padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); text-align: center; animation: popIn 0.4s ease; margin-bottom: 20px; }
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #eee; border-radius: 10px; font-size: 1rem; outline: none; transition: 0.3s; color: #333; }
         .login-input:focus { border-color: var(--primary); }
@@ -326,27 +324,9 @@
 
 <div class="app-wrapper">
     <div id="login-screen">
-       <div class="logo-container" style="
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    margin-bottom: 20px;
-    width: 100%;
-    max-width: 350px;
-    height: auto;
-    border-radius: 0;
-    display: flex;
-    justify-content: center;
-">
-    <img src="img/logo.png" alt="Logo" style="
-        width: 100%;
-        height: auto;
-        object-fit: contain;
-        border-radius: 0;
-        filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
-    ">
-</div>
+       <div class="logo-container" style="padding: 0; background: transparent; border: none; box-shadow: none; margin-bottom: 20px; width: 100%; max-width: 350px; height: auto; border-radius: 0; display: flex; justify-content: center;">
+            <img src="img/logo.png" alt="Logo" style="width: 100%; height: auto; object-fit: contain; border-radius: 0; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));">
+        </div>
         <div class="login-box" id="student-login-form">
             <h2 style="color:var(--text); margin-bottom: 5px;">Öğrenci Girişi</h2>
             <p style="color:var(--text-light); font-size:0.85rem; margin-bottom: 20px;">Bismillah de ve başla!</p>
@@ -969,7 +949,6 @@
     document.getElementById('tea-logout-btn').onclick = () => { localStorage.clear(); window.location.reload(); };
     document.getElementById('tea-nav-logout').onclick = () => { localStorage.clear(); window.location.reload(); };
 
-    // --- ROZET DÜZELTMESİ YAPILAN FONKSİYON ---
     function refreshStudentUI() {
         if(!window.currentUserData) return;
         const d = window.currentUserData;
@@ -986,21 +965,15 @@
         renderPrayers(d.completedPrayers || {}); renderIlim(d.memorizedItems || []); renderMarket(d.points || 0, d.namazPoints || 0, d.inventory || [], activeBadges); renderBadges(np, activeBadges); renderKaza(d.kazaDebts || {});
         const todayKey = new Date().toLocaleDateString('tr-TR'); if(d.lastQuizDate === todayKey) document.getElementById('quiz-entry-card').style.display = 'none'; else document.getElementById('quiz-entry-card').style.display = 'block';
 
-        // --- YENİ ROZET KUTLAMA SİSTEMİ (FIX) ---
         const earnedByPoints = activeBadges.filter(b => np >= b.point);
-        const storedBadges = d.earnedBadges || []; // Veritabanında kayıtlı olanlar
+        const storedBadges = d.earnedBadges || []; 
 
-        // Puanı yeten ama veritabanında olmayan rozeti bul
         const newBadge = earnedByPoints.find(b => !storedBadges.includes(b.id));
 
         if (newBadge) {
-            window.showBadgeCelebration(newBadge); // Kutlamayı yap
-            
-            // Veritabanına işle (Bir daha çıkmasın)
+            window.showBadgeCelebration(newBadge); 
             const userRef = doc(db, "users", window.currentUser);
             updateDoc(userRef, { earnedBadges: arrayUnion(newBadge.id) }).catch(console.error);
-
-            // Anlık olarak lokale de ekle ki listener gelene kadar tekrar tetiklenmesin
             if (!d.earnedBadges) d.earnedBadges = [];
             d.earnedBadges.push(newBadge.id);
         }
@@ -1015,7 +988,7 @@
             else {
                 btn.innerText = "Tamamla"; btn.style.background = "#d97706"; btn.style.color = "white"; btn.disabled = false;
                 btn.onclick = async () => { 
-                    const todayDay = new Date().getDay(); // 5 = Cuma
+                    const todayDay = new Date().getDay(); 
                     if(todayDay !== 5) { window.showAlert("Teslim Günü", "Görevler sadece CUMA günü teslim edilebilir.", "📅"); return; }
                     if(!checkOnline()) return; 
                     if(await window.showConfirm("Görev", "Görevi tamamladın mı?")) { 
@@ -1037,11 +1010,44 @@
         window.prayerTimes.forEach(p => { const key = `${dateKey}-${p.id}`; const dbDone = dbCompleted && dbCompleted[key]; const localDone = localCompleted[key]; const isDone = dbDone || localDone; const doneType = isDone ? (dbDone ? dbDone.type : localDone.type) : 'tek'; let isTime = false; let isPast = false; if (p.start > p.end) { isTime = (nowMin >= p.start) || (nowMin < p.end); if(!isTime && nowMin > p.end && nowMin < p.start) isPast = true; } else { isTime = (nowMin >= p.start && nowMin < p.end); if(!isTime && nowMin > p.end) isPast = true; } let html = ''; let styleClass = 'prayer-card'; if(isDone) { styleClass += ' active-prayer'; html = `<div style="background:#d1fae5; color:#065f46; padding:12px; border-radius:10px; text-align:center; font-weight:bold; flex:1;">✅ ${doneType === 'cemaat' ? 'Cemaatle' : 'Tek'} Kılındı</div>`; } else { if(!isTime) styleClass += ' inactive-time'; else styleClass += ' active-prayer'; html = `<div class="btn-row"><button class="btn-action btn-tek" id="tek-${p.id}">Tek Kıl</button><button class="btn-action btn-cem" id="cem-${p.id}">Cemaat</button></div>`; } div.innerHTML += `<div class="card ${styleClass}" style="padding:15px;" data-id="${p.id}"><div class="prayer-header"><span><i class="fas ${p.icon}" style="color:var(--primary);"></i> ${p.name}</span><span style="font-weight:bold; color:#555;">${p.time}</span></div><div class="action-area">${html}</div></div>`; });
         window.prayerTimes.forEach(p => { const key = `${dateKey}-${p.id}`; if(!dbCompleted[key] && !localCompleted[key]) { const btnTek = document.getElementById(`tek-${p.id}`); const btnCem = document.getElementById(`cem-${p.id}`); if(btnTek) btnTek.onclick = () => tryMarkPrayer(p, 'tek', key); if(btnCem) btnCem.onclick = () => tryMarkPrayer(p, 'cemaat', key); } });
     }
-
     async function tryMarkPrayer(p, type, key) {
-        if(!checkOnline()) return; const nowMin = new Date().getHours() * 60 + new Date().getMinutes(); let isTime = false; let isPast = false; if (p.start > p.end) { isTime = (nowMin >= p.start) || (nowMin < p.end); if(!isTime && nowMin > p.end && nowMin < p.start) isPast = true; } else { isTime = (nowMin >= p.start && nowMin < p.end); if(!isTime && nowMin > p.end) isPast = true; }
-        let reason = ""; if(!isTime && !isPast) { window.showAlert("Vakit Girmedi", "Henüz vakit gelmedi.", "🔒"); return; } if(isPast) { reason = await window.askReason(); if(!reason) return; } else { if(!await window.showConfirm("Namaz", `${p.name} namazını onaylıyor musun?`)) return; }
-        saveLocalPrayer(key, type); if(!window.currentUserData) window.currentUserData = {}; if(!window.currentUserData.completedPrayers) window.currentUserData.completedPrayers = {}; window.currentUserData.completedPrayers[key] = { type: type, reason: reason }; const pts = type === 'cemaat' ? 20 : 10; window.currentUserData.points = (window.currentUserData.points || 0) + pts; window.currentUserData.namazPoints = (window.currentUserData.namazPoints || 0) + pts; document.getElementById('points-display').innerText = window.currentUserData.points; document.getElementById('namaz-points-display').innerText = window.currentUserData.namazPoints; renderPrayers(window.currentUserData.completedPrayers); confetti({ particleCount: 150 }); window.showAlert("Allah Kabul Etsin", reason ? `Geçmiş namaz (${reason})` : "Puan eklendi.", "🤲"); try { await updateDoc(doc(db, "users", window.currentUser), { points: window.currentUserData.points, namazPoints: window.currentUserData.namazPoints, [`completedPrayers.${key}`]: { type: type, reason: reason }, lastActive: Date.now() }); } catch(e) { console.error("Veritabanı hatası:", e); }
+        if(!checkOnline()) return; 
+        const nowMin = new Date().getHours() * 60 + new Date().getMinutes(); 
+        let isTime = false; let isPast = false; 
+        if (p.start > p.end) { isTime = (nowMin >= p.start) || (nowMin < p.end); if(!isTime && nowMin > p.end && nowMin < p.start) isPast = true; } 
+        else { isTime = (nowMin >= p.start && nowMin < p.end); if(!isTime && nowMin > p.end) isPast = true; }
+        
+        let reason = ""; 
+        if(!isTime && !isPast) { window.showAlert("Vakit Girmedi", "Henüz vakit gelmedi.", "🔒"); return; } 
+        if(isPast) { reason = await window.askReason(); if(!reason) return; } 
+        else { if(!await window.showConfirm("Namaz", `${p.name} namazını onaylıyor musun?`)) return; }
+        
+        saveLocalPrayer(key, type); 
+        if(!window.currentUserData) window.currentUserData = {}; 
+        if(!window.currentUserData.completedPrayers) window.currentUserData.completedPrayers = {}; 
+        
+        window.currentUserData.completedPrayers[key] = { type: type, reason: reason }; 
+        const pts = type === 'cemaat' ? 20 : 10; 
+        
+        // --- DEĞİŞİKLİK BURADA: SADECE NP ARTIYOR, GP (points) ARTMİYOR ---
+        // window.currentUserData.points satırı kaldırıldı.
+        window.currentUserData.namazPoints = (window.currentUserData.namazPoints || 0) + pts; 
+        
+        document.getElementById('points-display').innerText = window.currentUserData.points || 0; 
+        document.getElementById('namaz-points-display').innerText = window.currentUserData.namazPoints; 
+        
+        renderPrayers(window.currentUserData.completedPrayers); 
+        confetti({ particleCount: 150 }); 
+        window.showAlert("Allah Kabul Etsin", reason ? `Geçmiş namaz (${reason})` : "NP Puanı eklendi.", "🤲"); 
+        
+        try { 
+            // Veritabanı güncellemesinden de 'points' kaldırıldı
+            await updateDoc(doc(db, "users", window.currentUser), { 
+                namazPoints: window.currentUserData.namazPoints, 
+                [`completedPrayers.${key}`]: { type: type, reason: reason }, 
+                lastActive: Date.now() 
+            }); 
+        } catch(e) { console.error("Veritabanı hatası:", e); }
     }
 
     function renderMarket(gp, np, inv, activeBadges) {
@@ -1200,9 +1206,20 @@
             allReqs.forEach(r => { 
                 currentAdminRequests.push([r.user, r.type, r.itemName, r.price || '-', r.reward || '-', r.quantity || 1]); 
                 const isEzber = r.type === 'ezber'; const isTask = r.type === 'task'; const isMarket = r.type === 'market';
+                
+                // --- DEĞİŞİKLİK BURADA: ÖĞRENCİ SINIFINI GÖSTERME KODU ---
+                const studentData = allStudentsData.find(s => s.id === r.user);
+                const classInfo = studentData ? `<small style="color:#666; margin-left:5px;">(${studentData.classNum})</small>` : '';
+                // --------------------------------------------------------
+
                 let bgColor = '#f9fafb'; let icon = '🛍️'; let borderColor = '#10b981'; 
                 if(isEzber) { bgColor = '#eff6ff'; icon = '📖'; borderColor = '#3b82f6'; } if(isTask) { bgColor = '#fffbeb'; icon = '🎯'; borderColor = '#d97706'; } 
-                let desc = `<b>${r.user}</b>: ${r.itemName}`; if(isEzber) desc = `<b>${r.user}</b>: ${r.itemName} ezberledi mi?`; if(isTask) desc = `<b>${r.user}</b>: ${r.itemName} yaptı mı?`; if(isMarket && r.quantity > 1) desc += ` <b>(${r.quantity} adet)</b>`;
+                
+                let desc = `<b>${r.user}</b> ${classInfo}: ${r.itemName}`; 
+                if(isEzber) desc = `<b>${r.user}</b> ${classInfo}: ${r.itemName} ezberledi mi?`; 
+                if(isTask) desc = `<b>${r.user}</b> ${classInfo}: ${r.itemName} yaptı mı?`; 
+                if(isMarket && r.quantity > 1) desc += ` <b>(${r.quantity} adet)</b>`;
+
                 const timeLabel = r.timestamp ? `<div style="font-size:0.6rem; color:#999;">${new Date(r.timestamp).toLocaleTimeString()}</div>` : '';
                 const div = document.createElement('div'); div.style = `background:${bgColor}; padding:10px; border-radius:8px; margin-bottom:5px; font-size:0.85rem; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid ${borderColor};`; 
                 div.innerHTML = `<div><span>${icon} ${desc}</span>${timeLabel}</div><div style="min-width:60px; text-align:right;"><button class="mgmt-btn" style="background:#10b981; margin:0;" id="ok-${r.id}">✔</button><button class="mgmt-btn" style="background:#ef4444; margin:0;" id="no-${r.id}">✘</button></div>`; 
