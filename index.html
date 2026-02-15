@@ -1062,7 +1062,7 @@
             else if(!hasStock) { actionHtml = `<div style="text-align:center; color:#EF4444; font-weight:bold; width:100%; padding:10px;">TÜKENDİ ❌</div>`; } 
             else {
                 const btnColor = item.currency === 'np' ? 'var(--purple)' : 'var(--primary)';
-                actionHtml = `<div class="market-actions-row"><input type="number" id="qty-${item.id}" value="1" min="1" max="10" class="market-qty-input"><button class="market-buy-btn" id="buy-${item.id}" style="background:${btnColor};">Satın Al</button></div>`;
+                actionHtml = `<div class="market-actions-row"><input type="number" id="qty-${item.id}" value="1" min="1" max="10" class="market-qty-input" oninput="if(this.value<1)this.value=1"><button class="market-buy-btn" id="buy-${item.id}" style="background:${btnColor};">Satın Al</button></div>`;
             }
             const currencyClass = item.currency === 'np' ? 'tag-np' : 'tag-gp'; const priceText = `${item.price} ${item.currency==='np'?'NP':'GP'}`;
             div.innerHTML += `<div class="market-item"><div class="currency-tag ${currencyClass}">${priceText}</div><div style="font-size:2.5rem; margin-top:15px; margin-bottom:5px;">${item.icon || '🎁'}</div><div style="font-weight:600; font-size:0.9rem; margin-bottom:5px;">${item.title}</div>${stockMsg ? `<div style="font-size:0.7rem; color:#666; margin-bottom:5px;">${stockMsg}</div>` : ''}${actionHtml}</div>`;
