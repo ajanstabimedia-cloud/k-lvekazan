@@ -1007,7 +1007,7 @@
                     localStorage.setItem('teacherPassSession', pass);
                     window.currentTeacherRole = 'teacher';
                     // Öğretmenin sorumlu olduğu sınıfları dizi yap
-                    window.currentTeacherClasses = tSnap.data().classes.split(',').map(c => c.trim()); 
+                    window.currentTeacherClasses = tSnap.data().classes.split(',').map(c => c.replace(/[\s\/\-\.]/g, '').toUpperCase()); 
                     
                     document.getElementById('login-screen').style.display = 'none'; 
                     document.getElementById('teacher-app').style.display = 'block'; 
