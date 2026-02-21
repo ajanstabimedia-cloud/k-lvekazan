@@ -350,10 +350,12 @@
             <button class="login-btn" id="reg-submit-btn" style="background:var(--accent);">Kaydı Gönder</button>
             <div class="switch-link" id="btn-cancel-register">< Girişe Dön</div>
         </div>
+        
         <div class="login-box" id="teacher-login-form" style="display:none;">
-            <h2 style="color:var(--text); margin-bottom: 5px;">Öğretmen Paneli</h2>
-            <p style="color:var(--text-light); font-size:0.85rem; margin-bottom: 20px;">Yönetim & Takip</p>
-            <input type="password" id="tea-password" class="login-input" placeholder="Yönetici Şifresi">
+            <h2 style="color:var(--text); margin-bottom: 5px;">Yönetici / Öğretmen Girişi</h2>
+            <p style="color:var(--text-light); font-size:0.85rem; margin-bottom: 20px;">Süper Admin veya Sınıf Öğretmeni</p>
+            <input type="text" id="tea-username" class="login-input" placeholder="Kullanıcı Adı (Admin için: admin)">
+            <input type="password" id="tea-password" class="login-input" placeholder="Şifre">
             <button class="login-btn" style="background:#1f2937;" id="tea-login-btn">Panele Git</button>
             <div class="switch-link" id="btn-show-student">< Öğrenci Girişi</div>
         </div>
@@ -507,7 +509,7 @@
                 </div>
                 <div class="card">
                     <h3 style="margin-bottom:15px; color:#2563eb;">📢 Duyuru & Bildirim</h3>
-                    <input type="text" id="announce-text" placeholder="Tüm öğrencilere mesaj gönder..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px;">
+                    <input type="text" id="announce-text" placeholder="Öğrencilere mesaj gönder..." style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px;">
                     <button class="admin-btn" style="background:#2563eb;" id="btn-send-announce">Bildirimi Gönder</button>
                     <h4 style="margin-top:20px; font-size:0.85rem; color:#666; border-bottom:1px solid #eee; padding-bottom:5px;">Aktif Duyurular</h4>
                     <div id="active-announcements" style="margin-top:10px; max-height:150px; overflow-y:auto;"></div>
@@ -612,6 +614,23 @@
                     <div id="admin-badge-list" style="max-height:150px; overflow-y:auto;"></div>
                 </div>
             </div>
+
+            <div id="tea-page-teachers" class="page">
+                <div class="card">
+                    <h3 style="margin-bottom:15px; color:#10B981;">👨‍🏫 Yeni Öğretmen Ata</h3>
+                    <div style="display:grid; gap:10px;">
+                        <input type="text" id="new-tea-username" placeholder="Öğretmen Kullanıcı Adı (örn: ahmethoca)" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
+                        <input type="text" id="new-tea-pass" placeholder="Öğretmen Şifresi" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
+                        <input type="text" id="new-tea-classes" placeholder="Sorumlu Sınıflar (Virgülle ayırın: 5,6,7/A)" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
+                        <button class="admin-btn" id="add-teacher-btn" style="background:#10B981;">Öğretmeni Kaydet</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom:15px; color:#4B5563;">📋 Aktif Öğretmenler</h3>
+                    <div id="admin-teacher-list" style="max-height:200px; overflow-y:auto;"></div>
+                </div>
+            </div>
+            
         </div>
 
         <div class="bottom-nav" style="border-color:#1f2937; background:rgba(31, 41, 55, 0.95);">
@@ -619,6 +638,7 @@
             <div class="nav-item" id="tea-nav-students"><i class="fas fa-users"></i> <span>Öğrenci</span></div>
             <div class="nav-item" id="tea-nav-requests"><i class="fas fa-bell"></i> <span>İstekler</span></div>
             <div class="nav-item" id="tea-nav-market"><i class="fas fa-store"></i> <span>Market</span></div>
+            <div class="nav-item" id="tea-nav-teachers" style="display:none;"><i class="fas fa-chalkboard-teacher"></i> <span>Öğretmenler</span></div>
             <div class="nav-item" id="tea-nav-logout"><i class="fas fa-sign-out-alt"></i></div>
         </div>
     </div>
@@ -674,6 +694,7 @@
     catch(e) { console.error("Firebase Hatası:", e); }
 
     window.currentUser = null; window.currentUserData = null; window.prayerTimes = [];
+    window.currentTeacherRole = null; window.currentTeacherClasses = []; // YENİ EKLENEN ROL DEĞİŞKENLERİ
     let currentAudioBtn = null; let globalMarketItems = []; let globalBadges = []; let allStudentsData = []; let currentGlobalTask = null;
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTeZZivXs8IuvUQZjwNgOVoSUxZXALUOjAtXo6xXABBEN7-DMNgvus3zPZEOtRKW3oBlwIZw8QCqy7/pub?gid=0&single=true&output=csv"; 
 
@@ -876,10 +897,22 @@
     window.startMathGame = async () => { const q1 = Math.floor(Math.random()*10), q2=Math.floor(Math.random()*10); const ans=await window.showPrompt("Matematik",`${q1} + ${q2} = ?`); if(ans==(q1+q2)) { window.showAlert("Tebrikler","Doğru!","🎉"); confetti(); } else window.showAlert("Yanlış","Tekrar dene","❌"); };
     window.startMemoryGame = () => window.showAlert("Yakında","Hafıza oyunu hazırlanıyor!","🧠");
 
-    // --- GENEL SİSTEM ---
+    // --- GENEL SİSTEM GÜNCELLEMESİ (SESSION KONTROLÜ) ---
     async function checkSession() {
-        const savedUser = localStorage.getItem('activeUser'); const userType = localStorage.getItem('activeUserType'); const exitTime = localStorage.getItem('exitTime'); const teacherPass = localStorage.getItem('teacherPassSession'); 
-        if (savedUser && exitTime) { const diff = Date.now() - parseInt(exitTime); if (diff < 60000) { if (userType === 'student') await loginStudent(savedUser); else if (userType === 'teacher' && teacherPass) await loginTeacher(teacherPass); } else { localStorage.removeItem('activeUser'); localStorage.removeItem('activeUserType'); localStorage.removeItem('teacherPassSession'); } }
+        const savedUser = localStorage.getItem('activeUser'); 
+        const userType = localStorage.getItem('activeUserType'); 
+        const exitTime = localStorage.getItem('exitTime'); 
+        const teacherPass = localStorage.getItem('teacherPassSession'); 
+        
+        if (savedUser && exitTime) { 
+            const diff = Date.now() - parseInt(exitTime); 
+            if (diff < 60000) { 
+                if (userType === 'student') await loginStudent(savedUser); 
+                else if ((userType === 'teacher' || userType === 'superadmin') && teacherPass) await loginTeacher(savedUser || 'admin', teacherPass); 
+            } else { 
+                localStorage.removeItem('activeUser'); localStorage.removeItem('activeUserType'); localStorage.removeItem('teacherPassSession'); 
+            } 
+        }
     }
     document.addEventListener('visibilitychange', () => { if (document.hidden) { if (window.currentUser || document.getElementById('teacher-app').style.display === 'block') localStorage.setItem('exitTime', Date.now()); } else { const exitTime = localStorage.getItem('exitTime'); if (exitTime && (Date.now() - parseInt(exitTime) > 60000)) window.location.reload(); } });
 
@@ -929,21 +962,76 @@
     }
     document.getElementById('stu-login-btn').onclick = async () => { const user = document.getElementById('stu-username').value.trim().toLowerCase(); const pass = document.getElementById('stu-password').value; if(!user || !pass) { window.showAlert("Hata", "Lütfen bilgileri girin.", "⚠️"); return; } if(!checkOnline()) return; loginStudent(user, pass); };
 
-    async function loginTeacher(pass) {
+    // --- YENİ ADMİN & ÖĞRETMEN GİRİŞ MANTIĞI ---
+    async function loginTeacher(user, pass) {
         try { 
-            const docRef = doc(db, "config", "admin_settings"); const docSnap = await getDoc(docRef); 
-            if (docSnap.exists()) { 
-                const realPassword = docSnap.data().password; 
-                if (pass === realPassword) { localStorage.setItem('activeUser', 'Teacher'); localStorage.setItem('activeUserType', 'teacher'); localStorage.setItem('teacherPassSession', pass); document.getElementById('login-screen').style.display = 'none'; document.getElementById('teacher-app').style.display = 'block'; initTeacherPanel(); } 
-                else if (pass === '0000') { const secret = await window.showPrompt("Kurtarma", "Kurtarma kodunu girin:"); if(secret === '1453') window.showAlert("Not", `Şifreniz: ${realPassword}`, "ℹ️"); else window.showAlert("Hata", "Kod yanlış.", "⛔"); } 
-                else window.showAlert("Hata", "Şifre yanlış.", "⛔"); 
-            } else { 
-                if (pass === '12345') { await setDoc(docRef, { password: '12345' }); window.showAlert("Kurulum Başarılı", "Yönetici şifresi '12345' oldu.", "✅"); localStorage.setItem('activeUser', 'Teacher'); localStorage.setItem('activeUserType', 'teacher'); localStorage.setItem('teacherPassSession', pass); document.getElementById('login-screen').style.display = 'none'; document.getElementById('teacher-app').style.display = 'block'; initTeacherPanel(); } 
-                else window.showAlert("İlk Kurulum", "Şifre yok. '12345' yazıp girin.", "ℹ️"); 
+            // 1) SÜPER ADMİN GİRİŞİ
+            if(user === 'admin') {
+                const docRef = doc(db, "config", "admin_settings"); 
+                const docSnap = await getDoc(docRef); 
+                
+                if (docSnap.exists() && pass === docSnap.data().password) { 
+                    localStorage.setItem('activeUserType', 'superadmin');
+                    localStorage.setItem('activeUser', 'admin');
+                    localStorage.setItem('teacherPassSession', pass);
+                    window.currentTeacherRole = 'superadmin';
+                    
+                    document.getElementById('login-screen').style.display = 'none'; 
+                    document.getElementById('teacher-app').style.display = 'block'; 
+                    
+                    // Süper admine sekme açılır
+                    document.getElementById('tea-nav-teachers').style.display = 'flex'; 
+                    
+                    // Butonları göster
+                    document.getElementById('add-market-btn').style.display = 'block';
+                    document.getElementById('add-badge-btn').style.display = 'block';
+                    document.getElementById('assign-task-btn').style.display = 'block';
+                    
+                    initTeacherPanel(); 
+                } 
+                else if (pass === '0000') { 
+                    const secret = await window.showPrompt("Kurtarma", "Kurtarma kodunu girin:"); 
+                    if(secret === '1453') window.showAlert("Not", `Şifreniz: ${docSnap.exists() ? docSnap.data().password : 'Yok'}`, "ℹ️"); 
+                    else window.showAlert("Hata", "Kod yanlış.", "⛔"); 
+                } 
+                else { window.showAlert("Hata", "Süper Admin şifresi yanlış.", "⛔"); }
+            } 
+            // 2) NORMAL ÖĞRETMEN GİRİŞİ
+            else {
+                const tRef = doc(db, "teachers", user);
+                const tSnap = await getDoc(tRef);
+                
+                if(tSnap.exists() && tSnap.data().password === pass) {
+                    localStorage.setItem('activeUser', user);
+                    localStorage.setItem('activeUserType', 'teacher');
+                    localStorage.setItem('teacherPassSession', pass);
+                    window.currentTeacherRole = 'teacher';
+                    // Öğretmenin sorumlu olduğu sınıfları dizi yap
+                    window.currentTeacherClasses = tSnap.data().classes.split(',').map(c => c.trim()); 
+                    
+                    document.getElementById('login-screen').style.display = 'none'; 
+                    document.getElementById('teacher-app').style.display = 'block'; 
+                    
+                    // Öğretmene gizlenecek alanlar
+                    document.getElementById('tea-nav-teachers').style.display = 'none'; 
+                    document.getElementById('add-market-btn').style.display = 'none';
+                    document.getElementById('add-badge-btn').style.display = 'none';
+                    document.getElementById('assign-task-btn').style.display = 'none';
+                    document.getElementById('delete-task-btn').style.display = 'none';
+                    
+                    initTeacherPanel();
+                } else { window.showAlert("Hata", "Öğretmen bulunamadı veya şifre yanlış.", "⛔"); }
             }
-        } catch(e) { console.error(e); window.showAlert("Hata", "Bağlantı hatası: " + e.message, "⚠️"); }
+        } catch(e) { console.error(e); window.showAlert("Hata", "Bağlantı hatası.", "⚠️"); }
     }
-    document.getElementById('tea-login-btn').onclick = async () => { const pass = document.getElementById('tea-password').value; if(!pass) { window.showAlert("Hata", "Şifre giriniz.", "⚠️"); return; } if(!checkOnline()) return; loginTeacher(pass); };
+    
+    document.getElementById('tea-login-btn').onclick = async () => { 
+        const user = document.getElementById('tea-username').value.trim().toLowerCase();
+        const pass = document.getElementById('tea-password').value; 
+        if(!user || !pass) { window.showAlert("Hata", "Kullanıcı adı ve şifre giriniz.", "⚠️"); return; } 
+        if(!checkOnline()) return; 
+        loginTeacher(user, pass); 
+    };
 
     document.getElementById('nav-logout').onclick = () => { localStorage.clear(); window.location.reload(); };
     document.getElementById('tea-logout-btn').onclick = () => { localStorage.clear(); window.location.reload(); };
@@ -1029,8 +1117,6 @@
         window.currentUserData.completedPrayers[key] = { type: type, reason: reason }; 
         const pts = type === 'cemaat' ? 20 : 10; 
         
-        // --- DEĞİŞİKLİK BURADA: SADECE NP ARTIYOR, GP (points) ARTMİYOR ---
-        // window.currentUserData.points satırı kaldırıldı.
         window.currentUserData.namazPoints = (window.currentUserData.namazPoints || 0) + pts; 
         
         document.getElementById('points-display').innerText = window.currentUserData.points || 0; 
@@ -1041,7 +1127,6 @@
         window.showAlert("Allah Kabul Etsin", reason ? `Geçmiş namaz (${reason})` : "NP Puanı eklendi.", "🤲"); 
         
         try { 
-            // Veritabanı güncellemesinden de 'points' kaldırıldı
             await updateDoc(doc(db, "users", window.currentUser), { 
                 namazPoints: window.currentUserData.namazPoints, 
                 [`completedPrayers.${key}`]: { type: type, reason: reason }, 
@@ -1117,8 +1202,11 @@
 
     const tabs = ['nav-home', 'nav-ilim', 'nav-market', 'nav-games']; const pages = ['home-page', 'ilim-page', 'market-page', 'games-page']; const header = document.getElementById('main-header');
     tabs.forEach((tid, idx) => { const btn = document.getElementById(tid); if(btn) { btn.onclick = () => { pages.forEach(pid => document.getElementById(pid).classList.remove('active')); document.getElementById(pages[idx]).classList.add('active'); tabs.forEach(t => document.getElementById(t).classList.remove('active')); document.getElementById(tid).classList.add('active'); if (tid === 'nav-home') header.classList.remove('hidden'); else header.classList.add('hidden'); }; } });
-    const teaTabs = ['tea-nav-home', 'tea-nav-students', 'tea-nav-market', 'tea-nav-requests']; const teaPages = ['tea-page-home', 'tea-page-students', 'tea-page-market', 'tea-page-requests'];
-    teaTabs.forEach((tid, idx) => { const btn = document.getElementById(tid); if(btn) { btn.onclick = () => { teaPages.forEach(pid => document.getElementById(pid).classList.remove('active')); document.getElementById(teaPages[idx]).classList.add('active'); teaTabs.forEach(t => document.getElementById(t).classList.remove('active')); document.getElementById(tid).classList.add('active'); }; } });
+    
+    // --- ÖĞRETMEN MENÜSÜ GÜNCELLENDİ ---
+    const teaTabs = ['tea-nav-home', 'tea-nav-students', 'tea-nav-market', 'tea-nav-requests', 'tea-nav-teachers']; 
+    const teaPages = ['tea-page-home', 'tea-page-students', 'tea-page-market', 'tea-page-requests', 'tea-page-teachers'];
+    teaTabs.forEach((tid, idx) => { const btn = document.getElementById(tid); if(btn) { btn.onclick = () => { teaPages.forEach(pid => { const p = document.getElementById(pid); if(p) p.classList.remove('active'); }); const targetPage = document.getElementById(teaPages[idx]); if(targetPage) targetPage.classList.add('active'); teaTabs.forEach(t => { const b = document.getElementById(t); if(b) b.classList.remove('active'); }); document.getElementById(tid).classList.add('active'); }; } });
 
     function parseCSV(text) { const rows = []; let currentRow = []; let currentCell = ''; let inQuotes = false; for (let i = 0; i < text.length; i++) { const char = text[i]; if (char === '"') { inQuotes = !inQuotes; } else if (char === ',' && !inQuotes) { currentRow.push(currentCell); currentCell = ''; } else if ((char === '\r' || char === '\n') && !inQuotes) { if (currentCell || currentRow.length > 0) currentRow.push(currentCell); if (currentRow.length > 0) rows.push(currentRow); currentRow = []; currentCell = ''; if (char === '\r' && text[i+1] === '\n') i++; } else { currentCell += char; } } if (currentCell || currentRow.length > 0) currentRow.push(currentCell); if (currentRow.length > 0) rows.push(currentRow); return rows; }
     
@@ -1163,7 +1251,7 @@
     window.exportLeaderboardToExcel = () => { const rows = [['Sira', 'Ogrenci', 'Okul No', 'Sinif', 'NP (Genel)', 'GP (Puan)', 'Son Giris']]; allStudentsData.sort((a,b) => (b.namazPoints || 0) - (a.namazPoints || 0)); allStudentsData.forEach((s, i) => { rows.push([ i+1, s.id, s.school || '', s.classNum || '', s.namazPoints || 0, s.points || 0, s.lastActive ? new Date(s.lastActive).toLocaleDateString() : '-' ]); }); window.exportToCSV("ogrenci_siralamasi.csv", rows); };
     window.exportRequestsToExcel = () => { const rows = [['Ogrenci', 'Tip', 'Icerik', 'Fiyat/Puan', 'Adet', 'Tarih']]; currentAdminRequests.forEach(r => { rows.push([r[0], r[1], r[2], r[3], r[4], new Date(r.timestamp).toLocaleDateString()]); }); window.exportToCSV("bekleyen_istekler.csv", rows); };
 
-    // YÖNETİCİ PANELİ KODLARI
+    // YÖNETİCİ PANELİ KODLARI (Sadece Super Admin kullanabilir)
     document.getElementById('add-market-btn').onclick = async () => { 
         const title = document.getElementById('m-title').value; const price = parseInt(document.getElementById('m-price').value); const currency = document.getElementById('m-currency').value; const icon = document.getElementById('m-icon').value || '📦'; const autoApprove = document.getElementById('m-auto-approve').checked; const stockInput = document.getElementById('m-stock').value; const stock = stockInput ? parseInt(stockInput) : null; 
         if(title && price) { await addDoc(collection(db, "market"), { title: title, price: price, currency: currency, icon: icon, autoApprove: autoApprove, stock: stock }); window.showAlert("Başarılı", "Eklendi.", "🛍️"); document.getElementById('m-title').value = ''; document.getElementById('m-price').value = ''; document.getElementById('m-icon').value = ''; document.getElementById('m-auto-approve').checked = false; document.getElementById('m-stock').value = ''; } 
@@ -1171,7 +1259,19 @@
     document.getElementById('add-badge-btn').onclick = async () => { const name = document.getElementById('b-name').value; const point = parseInt(document.getElementById('b-point').value); const icon = document.getElementById('b-icon').value || '🏅'; if(name && point) { await addDoc(collection(db, "badges"), { name: name, point: point, icon: icon }); window.showAlert("Başarılı", "Rozet eklendi.", "🥇"); document.getElementById('b-name').value = ''; document.getElementById('b-point').value = ''; document.getElementById('b-icon').value = ''; } else { window.showAlert("Eksik", "İsim ve puan girin.", "⚠️"); } };
     document.getElementById('assign-task-btn').onclick = async () => { const txt = document.getElementById('admin-task').value; const pts = document.getElementById('admin-points').value; if(txt && pts) { await setDoc(doc(db, "global", "task"), { text: txt, reward: pts, id: Date.now() }); window.showAlert("Tamam", "Görev güncellendi.", "📢"); } else { window.showAlert("Eksik", "Lütfen görev ve puan girin.", "⚠️"); } };
     document.getElementById('delete-task-btn').onclick = async () => { if(await window.showConfirm("Sil", "Görevi silmek istiyor musun?")) { await deleteDoc(doc(db, "global", "task")); document.getElementById('admin-task').value = ''; document.getElementById('admin-points').value = ''; } };
-    document.getElementById('add-student-btn').onclick = async () => { const name = document.getElementById('new-stu-name').value.trim().toLowerCase(); const pass = document.getElementById('new-stu-pass').value; const school = document.getElementById('new-stu-school').value; const classNum = document.getElementById('new-stu-class').value; if(!name) return; const r = doc(db, "users", name); const s = await getDoc(r); if(s.exists()) window.showAlert("Hata", "Kullanıcı zaten var", "⚠️"); else { await setDoc(r, { password: pass, school: school, classNum: classNum, points: 100, namazPoints: 0, completedPrayers: {}, inventory: [], memorizedItems: [], completedTasks: [], pendingEzbers: [], pendingTasks: [], lastPurchases: {}, status: 'active', lastActive: Date.now(), seenQuestions: [], earnedBadges: [] }); window.showAlert("Başarılı", "Eklendi.", "✅"); } };
+    
+    // Yeni Öğretmen Atama (Süper Admin)
+    document.getElementById('add-teacher-btn').onclick = async () => {
+        const username = document.getElementById('new-tea-username').value.trim().toLowerCase();
+        const pass = document.getElementById('new-tea-pass').value;
+        const classes = document.getElementById('new-tea-classes').value;
+        if(!username || !pass) { window.showAlert("Hata", "Kullanıcı adı ve şifre zorunlu.", "⚠️"); return; }
+        await setDoc(doc(db, "teachers", username), { password: pass, classes: classes, createdAt: Date.now() });
+        window.showAlert("Başarılı", "Öğretmen sisteme atandı.", "✅");
+        document.getElementById('new-tea-username').value = ''; document.getElementById('new-tea-pass').value = ''; document.getElementById('new-tea-classes').value = '';
+    };
+
+    document.getElementById('add-student-btn').onclick = async () => { const name = document.getElementById('new-stu-name').value.trim().toLowerCase(); const pass = document.getElementById('new-stu-pass').value; const school = document.getElementById('new-stu-school').value; const classNum = document.getElementById('new-stu-class').value; if(!name) return; const r = doc(db, "users", name); const s = await getDoc(r); if(s.exists()) window.showAlert("Hata", "Kullanıcı zaten var", "⚠️"); else { await setDoc(r, { password: pass, school: school, classNum: classNum, points: 100, namazPoints: 0, completedPrayers: {}, inventory: [], memorizedItems: [], completedTasks: [], pendingEzbers: [], pendingTasks: [], lastPurchases: {}, status: 'active', lastActive: Date.now(), seenQuestions: [], earnedBadges: [] }); window.showAlert("Başarılı", "Eklendi.", "✅"); document.getElementById('new-stu-name').value=''; document.getElementById('new-stu-pass').value=''; document.getElementById('new-stu-school').value=''; document.getElementById('new-stu-class').value=''; } };
 
     window.calculatePeriodPoints = (userData, period) => { if(period === 'all') return userData.namazPoints || 0; const prayers = userData.completedPrayers || {}; let total = 0; const now = new Date(); const oneDay = 24 * 60 * 60 * 1000; Object.keys(prayers).forEach(key => { const datePart = key.split('-')[0]; const [d, m, y] = datePart.split('.'); const pDate = new Date(y, m-1, d); const pts = prayers[key].type === 'cemaat' ? 20 : 10; if(period === 'month') { if(pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear()) total += pts; } else if(period === 'week') { const diffDays = Math.round(Math.abs((now - pDate) / oneDay)); if(diffDays <= 7) total += pts; } }); return total; };
     window.renderLeaderboard = (period) => { ['all','month','week'].forEach(p => { const btn = document.getElementById(`tab-${p}`); if(p === period) btn.classList.add('active'); else btn.classList.remove('active'); }); const table = document.getElementById('admin-student-table'); if(!allStudentsData || allStudentsData.length === 0) { table.innerHTML = '<p style="padding:10px;">Veri yok</p>'; return; } table.innerHTML = `<thead style="background:#f3f4f6; text-align:left;"><tr><th style="padding:10px;">#</th><th>Öğrenci</th><th style="color:var(--purple);">NP (${period === 'all' ? 'T' : (period === 'month' ? 'Ay' : 'Hft')})</th><th style="color:var(--primary);">GP</th><th>İşlem</th></tr></thead><tbody>`; const list = allStudentsData.map(s => { return { ...s, periodPoints: window.calculatePeriodPoints(s, period) }; }); list.sort((a,b) => b.periodPoints - a.periodPoints); list.forEach((s, i) => { table.innerHTML += `<tr style="border-bottom:1px solid #eee;"><td style="padding:10px; font-weight:bold;">${i + 1}</td><td><div style="font-weight:bold; cursor:pointer; color:blue;" onclick="window.viewStudentDetails('${s.id}')">${capitalize(s.id)} <small style='color:#888'>(${s.classNum || '-'})</small></div></td><td style="color:var(--purple); font-weight:bold;">${s.periodPoints}</td><td style="color:var(--primary); font-weight:bold;">${s.points || 0}</td><td><button class="mgmt-btn" style="background:#8b5cf6;" onclick="window.renameUser('${s.id}')">✏️</button><button class="mgmt-btn" style="background:#f59e0b;" onclick="window.changePass('${s.id}')">🔑</button><button class="mgmt-btn" style="background:#ef4444;" onclick="window.delUser('${s.id}')">🗑️</button></td></tr>`; }); table.innerHTML += '</tbody>'; };
@@ -1184,14 +1284,28 @@
     function initTeacherPanel() {
         onSnapshot(collection(db, "users"), (snap) => {
             allStudentsData = []; const pendingList = document.getElementById('pending-users-list'); const pendingCard = document.getElementById('pending-users-card'); const activityList = document.getElementById('activity-log-list'); pendingList.innerHTML = ''; let pendingCount = 0; activityList.innerHTML = '';
-            snap.forEach(d => { const u = d.data(); if(u.status === 'pending') { pendingCount++; const div = document.createElement('div'); div.style = "background:#fff7ed; padding:10px; margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;"; div.innerHTML = `<span>${capitalize(d.id)}<br><small style='color:#666'>${u.school} - ${u.classNum}</small></span><div><button class="mgmt-btn" style="background:#10b981;" onclick="window.approveUser('${d.id}')">Onayla</button><button class="mgmt-btn" style="background:#ef4444;" onclick="window.delUser('${d.id}')">Sil</button></div>`; pendingList.appendChild(div); } else allStudentsData.push({ id: d.id, ...u }); });
+            snap.forEach(d => { 
+                const u = d.data(); 
+                
+                // ÖĞRETMEN FİLTRESİ
+                if (window.currentTeacherRole === 'teacher' && (!window.currentTeacherClasses || !window.currentTeacherClasses.includes(u.classNum))) {
+                    return; // Bu öğrenci öğretmenin sınıfında değilse atla
+                }
+
+                if(u.status === 'pending') { 
+                    pendingCount++; const div = document.createElement('div'); div.style = "background:#fff7ed; padding:10px; margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;"; div.innerHTML = `<span>${capitalize(d.id)}<br><small style='color:#666'>${u.school} - ${u.classNum}</small></span><div><button class="mgmt-btn" style="background:#10b981;" onclick="window.approveUser('${d.id}')">Onayla</button><button class="mgmt-btn" style="background:#ef4444;" onclick="window.delUser('${d.id}')">Sil</button></div>`; pendingList.appendChild(div); 
+                } else {
+                    allStudentsData.push({ id: d.id, ...u }); 
+                }
+            });
+            
             if(pendingCount > 0) pendingCard.style.display = 'block'; else pendingCard.style.display = 'none';
             const activeStudents = [...allStudentsData].sort((a,b) => (b.lastActive || 0) - (a.lastActive || 0)).slice(0, 20); if(activeStudents.length === 0) activityList.innerHTML = '<p style="color:#999; text-align:center;">Henüz hareket yok.</p>'; activeStudents.forEach(s => { if(!s.lastActive) return; const date = new Date(s.lastActive); const timeStr = date.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}); const dateStr = date.toLocaleDateString('tr-TR'); const div = document.createElement('div'); div.className = 'activity-item'; div.innerHTML = `<span style="font-weight:600;">${capitalize(s.id)} <span style="font-weight:normal; color:#666; font-size:0.7rem;">(${s.school} ${s.classNum || '-'})</span></span> <span class="activity-time">${dateStr} ${timeStr}</span>`; activityList.appendChild(div); });
             window.renderLeaderboard('all');
         });
         
         onSnapshot(collection(db, "badges"), (snap) => { const list = document.getElementById('admin-badge-list'); list.innerHTML = ''; snap.forEach(d => { const i = d.data(); const div = document.createElement('div'); div.className = 'admin-badge-item'; div.innerHTML = `<span>${i.icon} ${i.name} (${i.point} NP)</span> <i class="fas fa-trash" style="color:#EF4444; cursor:pointer;"></i>`; div.querySelector('i').onclick = async () => { if(await window.showConfirm("Sil", "Silinsin mi?")) await deleteDoc(doc(db, "badges", d.id)); }; list.appendChild(div); }); });
-        onSnapshot(doc(db, "global", "task"), (d) => { const disp = document.getElementById('active-task-display'); const delBtn = document.getElementById('delete-task-btn'); if(d.exists()) { const task = d.data(); disp.innerHTML = `Aktif: <b>${task.text}</b> (${task.reward} P)`; delBtn.style.display = 'block'; if(document.getElementById('admin-task').value === '') { document.getElementById('admin-task').value = task.text; document.getElementById('admin-points').value = task.reward; } } else { disp.innerHTML = 'Aktif görev yok.'; delBtn.style.display = 'none'; } });
+        onSnapshot(doc(db, "global", "task"), (d) => { const disp = document.getElementById('active-task-display'); const delBtn = document.getElementById('delete-task-btn'); if(d.exists()) { const task = d.data(); disp.innerHTML = `Aktif: <b>${task.text}</b> (${task.reward} P)`; if (window.currentTeacherRole === 'superadmin') delBtn.style.display = 'block'; if(document.getElementById('admin-task').value === '') { document.getElementById('admin-task').value = task.text; document.getElementById('admin-points').value = task.reward; } } else { disp.innerHTML = 'Aktif görev yok.'; delBtn.style.display = 'none'; } });
         onSnapshot(collection(db, "market"), (snap) => { const list = document.getElementById('admin-market-list'); list.innerHTML = ''; snap.forEach(d => { const i = d.data(); const div = document.createElement('div'); div.className = 'admin-market-item'; const autoBadge = i.autoApprove ? '<span style="font-size:0.6rem; background:#d1fae5; color:#065f46; padding:2px 5px; border-radius:4px; margin-left:5px;">OTO</span>' : ''; const stockBadge = (i.stock !== undefined && i.stock !== null) ? `<span style="font-size:0.6rem; background:#f3f4f6; border:1px solid #ddd; color:#333; padding:2px 5px; border-radius:4px; margin-left:5px;">Stok: ${i.stock}</span>` : ''; div.innerHTML = `<span>${i.icon} ${i.title} (${i.price} ${i.currency})${autoBadge}${stockBadge}</span> <i class="fas fa-trash" style="color:red; cursor:pointer;"></i>`; div.querySelector('i').onclick = async () => { if(await window.showConfirm("Sil", "Silinsin mi?")) await deleteDoc(doc(db, "market", d.id)); }; list.appendChild(div); }); });
         
         onSnapshot(query(collection(db, "announcements"), orderBy("timestamp", "desc")), (snap) => {
@@ -1202,15 +1316,24 @@
         onSnapshot(query(collection(db, "requests"), where("status", "==", "pending")), (snap) => { 
             const marketList = document.getElementById('req-market'); const ezberList = document.getElementById('req-ezber'); const taskList = document.getElementById('req-task'); marketList.innerHTML = ''; ezberList.innerHTML = ''; taskList.innerHTML = ''; currentAdminRequests = []; 
             if(snap.empty) { marketList.innerHTML = '<span style="color:#aaa;">Bekleyen yok.</span>'; }
-            let allReqs = []; snap.forEach(d => allReqs.push({id: d.id, ...d.data()})); allReqs.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+            let allReqs = []; 
+            snap.forEach(d => {
+                const r = d.data();
+                // ROL KONTROLÜ
+                if (window.currentTeacherRole === 'teacher') {
+                    const studentInList = allStudentsData.find(s => s.id === r.user);
+                    if (!studentInList) return; // Öğretmenin sınıfında değilse isteği listeleme
+                }
+                allReqs.push({id: d.id, ...r});
+            }); 
+            
+            allReqs.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
             allReqs.forEach(r => { 
                 currentAdminRequests.push([r.user, r.type, r.itemName, r.price || '-', r.reward || '-', r.quantity || 1]); 
                 const isEzber = r.type === 'ezber'; const isTask = r.type === 'task'; const isMarket = r.type === 'market';
                 
-                // --- DEĞİŞİKLİK BURADA: ÖĞRENCİ SINIFINI GÖSTERME KODU ---
                 const studentData = allStudentsData.find(s => s.id === r.user);
                 const classInfo = studentData ? `<small style="color:#666; margin-left:5px;">(${studentData.classNum})</small>` : '';
-                // --------------------------------------------------------
 
                 let bgColor = '#f9fafb'; let icon = '🛍️'; let borderColor = '#10b981'; 
                 if(isEzber) { bgColor = '#eff6ff'; icon = '📖'; borderColor = '#3b82f6'; } if(isTask) { bgColor = '#fffbeb'; icon = '🎯'; borderColor = '#d97706'; } 
@@ -1249,6 +1372,24 @@
                 }; 
             }); 
         });
+
+        // SÜPER ADMİN İÇİN ÖĞRETMENLER LİSTESİ
+        if(window.currentTeacherRole === 'superadmin') {
+            onSnapshot(collection(db, "teachers"), (snap) => {
+                const list = document.getElementById('admin-teacher-list');
+                if(list) {
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const t = d.data();
+                        const div = document.createElement('div');
+                        div.style = "background:#f9fafb; padding:10px; border:1px solid #eee; border-radius:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;";
+                        div.innerHTML = `<div><strong>${capitalize(d.id)}</strong><br><small style="color:#666;">Sorumlu Sınıflar: ${t.classes}</small></div>
+                        <button class="mgmt-btn" style="background:#ef4444;" onclick="if(confirm('Öğretmeni silmek istiyor musunuz?')) deleteDoc(doc(db, 'teachers', '${d.id}'))">Sil</button>`;
+                        list.appendChild(div);
+                    });
+                }
+            });
+        }
     }
 </script>
 </body>
